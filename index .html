@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sen uchun kichik sovgʻa</title>
+<style>
+  :root{
+    --bg:#bfe3ff; --ink:#1d2a4a; --card:#ffffff; --btn:#ff7a8a; --btn2:#ffd23f;
+  }
+  *{box-sizing:border-box;margin:0}
+  html,body{height:100%}
+  body{
+    font-family:"Nunito","Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px; transition:background .6s ease; overflow:hidden;
+  }
+  main{width:100%; max-width:440px; text-align:center; position:relative; z-index:2}
+  h1{font-size:clamp(1.6rem,6vw,2.2rem); font-weight:900; line-height:1.2; margin-bottom:6px}
+  .sub{font-size:1rem; opacity:.75; margin-bottom:26px}
+  .bubble{
+    position:relative; background:var(--card); border-radius:28px 28px 28px 6px;
+    padding:28px 22px; min-height:150px; display:flex; align-items:center; justify-content:center;
+    font-size:clamp(1.15rem,4.6vw,1.4rem); font-weight:700; line-height:1.45;
+    box-shadow:0 10px 0 rgba(29,42,74,.12);
+  }
+  .bubble.pop{animation:pop .35s ease}
+  @keyframes pop{0%{transform:scale(.92) rotate(-1.5deg)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
+  .face{font-size:3rem; margin:18px 0 6px; display:inline-block; transition:transform .3s}
+  button{
+    font:inherit; font-weight:900; font-size:1.15rem; color:#fff; background:var(--btn);
+    border:0; border-radius:999px; padding:16px 34px; cursor:pointer;
+    box-shadow:0 6px 0 rgba(29,42,74,.25); transition:transform .1s, box-shadow .1s;
+  }
+  button:active{transform:translateY(5px); box-shadow:0 1px 0 rgba(29,42,74,.25)}
+  button:focus-visible{outline:4px solid var(--btn2); outline-offset:3px}
+  .count{margin-top:18px; font-size:.95rem; opacity:.7}
+  .float{position:fixed; bottom:-40px; font-size:28px; pointer-events:none; z-index:1; animation:up 2.8s ease-in forwards}
+  @keyframes up{to{transform:translateY(-110vh) rotate(25deg); opacity:0}}
+  @media (prefers-reduced-motion:reduce){.bubble.pop,.float{animation:none}.float{display:none}}
+  main{display:none}
+  body.open main{display:block}
+  #gate{width:100%; max-width:440px; text-align:center; position:relative; z-index:2}
+  body.open #gate{display:none}
+  .gift{font-size:4rem; display:inline-block; animation:bob 2s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-10px) rotate(-4deg)}}
+  #gate input{
+    font:inherit; font-size:1.4rem; font-weight:800; text-align:center; letter-spacing:.3em;
+    width:100%; max-width:260px; padding:14px 16px; margin:6px 0 18px;
+    border:3px solid #fff; border-radius:999px; background:#fff; color:var(--ink);
+    box-shadow:0 6px 0 rgba(29,42,74,.12);
+  }
+  #gate input:focus-visible{outline:4px solid var(--btn2); outline-offset:2px}
+  #err{min-height:1.6em; margin-top:16px; font-weight:700}
+  .shake{animation:shake .4s}
+  @keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+  @media (prefers-reduced-motion:reduce){.gift,.shake{animation:none}}
+</style>
+</head>
+<body>
+<section id="gate">
+  <div class="gift" aria-hidden="true">🎁</div>
+  <p class="sub">Bugun senga kichik syurprizim bor. Ochish uchun parolni yoz.</p>
+  <input id="pw" type="password" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="Parol">
+  <br><button id="open">Ochish</button>
+  <p id="err" aria-live="polite"></p>
+</section>
+<main>
+  <h1 id="title"></h1>
+  <p class="sub">Pastdagi tugmani bos, har safar yangi gap chiqadi.</p>
+  <div class="bubble" id="msg" aria-live="polite">Tayyormisan? Pastdagi tugmani bos 👇</div>
+  <div class="face" id="face">😊</div><br>
+  <button id="go">Hmm</button>
+  <p class="count" id="days"></p>
+</main>
+
+<script>
+  // 1) Shu yerga uning ismini yozing:
+  const NAME = "Madi";
+  const SINCE = "2026-05-17"; // birga boʻlgan kun
+
+  // 2) Xohlasangiz gaplarni oʻzgartiring yoki yangilarini qoʻshing:
+  const MESSAGES = [
+    "Kayfiyating biroz tushgan boʻlsa, bilib qoʻy: sen kulganingda dunyo chiroyliroq boʻladi.",
+    "Qiyin vazifalar koʻpincha eng katta yutuqlarga olib boradi. Biz ularni albatta eplaymiz.",
+    "Birga oʻtkazgan kunlarimizni eslasam, koʻnglim yorishib ketadi.",
+    "Mini topshiriq: hozir koʻzguga qarab, tekshirib koʻr. Kulgi senga yarashadimi? Albatta yarashadi. 😁",
+    "Sening kulgingni eshitish — mening kunimdagi eng yaxshi xabar.",
+    "Seni sogʻinish ham yoqimli, chunki bu seni qanchalik yaxshi koʻrishimni eslatadi.",
+    "Mini topshiriq: bugungi uchta yaxshi narsani eslab koʻr. Hatto eng kichigi ham hisob.",
+    "Sen borsan, demak, bu kun allaqachon mazmunli.",
+    "Oʻz yoʻlingdan borasan, boshqalar bilan oʻzingni solishtirishing shart emas.",
+    "Qiziq fakt: kulganda organizm xursandlik beruvchi moddalarni ishlab chiqaradi. Demak, kulgi eng arzon dori. 😄",
+    "Sening orzularing katta va men ularga chin dildan ishonaman.",
+    "Uchrashgunimizcha kunlarni sanayman. Sen ham shunday qilsang, vaqt tezroq oʻtadi.",
+    "Bir kun kelib yana yonma-yon oʻtiramiz. Shu kungacha sabr qilamiz, toʻgʻrimi?",
+    "Oʻsha kun kelganda, ikkimiz ham bugungi sabrimizga rahmat aytamiz.",
+    "Mini topshiriq: koʻzguga qarab, oʻzingga: “Men yaxshi harakat qilyapman”, de.",
+    "Har qanday yomon kun oʻtib ketadi. Masofa ham bir kun tugaydi.",
+    "Charchagan boʻlsang, dam olish ham ishning bir qismi.",
+    "Qiziq fakt: Oy fazasi butun dunyoda bir xil boʻladi. Bugun oyga qara, men ham qarayman. 🌙",
+    "Bu sahifani faqat seni kuldirish uchun yasadim. Agar kulgan boʻlsang, mehnatim zoye ketmabdi. 😊",
+    "Bugungi qiyinchilik vaqtincha, biz esa uzoq vaqtga birgamiz.",
+    "Mini topshiriq: bir piyola issiq choy qoʻyib, shoshilmasdan ich. ☕",
+    "Sen atrofdagilarga iliqlik ulashasan, lekin oʻzing buni sezmaysan.",
+    "Mini topshiriq: yoqtirgan qoʻshigʻingni qoʻyib, bir daqiqa raqsga tush. 🎵",
+    "Xavotiring boʻlsa, uni qogʻozga yoz. Koʻpincha yozilgach, yengillashadi.",
+    "Kichik yutuqlar ham yutuq. Bugun oʻrningdan turganing ham shulardan biri.",
+    "Qiziq fakt: qaldirgʻochlar minglab kilometr uchib, doim oʻz uyiga qaytadi. Biz ham bir kun yana yonma-yon boʻlamiz. 🕊️",
+    "Hammasini bir kunda hal qilish shart emas. Bugun faqat oʻzingga mehribon boʻl.",
+    "Sen qanday kiyinsang ham chiroyli koʻrinasan, chunki chiroying kiyimda emas.",
+    "Mini topshiriq: bugun yoqtirgan bir kitobdan bir sahifa oʻqi. 📖",
+    "Oʻzingga qanchalik mehribon boʻlsang, dunyo ham senga shunchalik mehribon koʻrinadi.",
+    "Maktabdagi oʻsha kunlarni eslasam, oʻzim bilmagan holda jilmayib qoʻyaman. Sen-chi?",
+    "Mini topshiriq: derazani och va uch marta chuqur nafas ol. 🌬️",
+    "Oʻzingni haddan tashqari qattiq tanqid qilma. Sen allaqachon yaxshi harakat qilyapsan.",
+    "Bir kun kelib masofa ham, sogʻinch ham tugaydi. Biz esa birga boʻlamiz.",
+    "Qiziq fakt: asalarilar bir kunda minglab gulni aylanib chiqadi. Sen ham oʻz yoʻlingda shunchalik mehnat qilyapsan. 🐝",
+    "Keyingi uchrashuvimizda nima qilamiz? Hozirdan oʻylab qoʻy, men ham oʻylayman.",
+    "Oramizda masofa bor, lekin ikkimiz ham bir osmon ostidamiz. Shu fikr meni xursand qiladi.",
+    "Mini topshiriq: bugun oʻzingga biror shirinlik olib ber. Hisobini men toʻlayman. 🍫",
+    "Bugun qiyin oʻtgan boʻlsa ham, sen baribir bardosh berding. Men sen bilan faxrlanaman.",
+    "Bizga ishonaman: qaysi ishni boshlasak ham, bir kun birga boʻlganimizda hammasini uddalaymiz. 💛",
+    "Mini topshiriq: bir stakan suv ichib, kamida bir marta jilmay. Bajardingmi? 💧",
+    "Sening ovozingni eshitsam, kayfiyatim darrov koʻtariladi.",
+    "Bugun hamma ishni uddalay olmasang ham, bu normal. Ertaga yangi imkoniyat bor.",
+    "Qiziq fakt: chuqur nafas olish yurak urishini sekinlashtirib, tinchlantiradi. Hozir sinab koʻr.",
+    "Bir chuqur nafas ol, keyin sekin chiqar. Hammasi yaxshi boʻladi, ishon.",
+    "Seni oʻylasam, hatto eng ogʻir kun ham biroz yengillashadi.",
+    "Mini topshiriq: koʻzingni yumib, eng yoqtirgan joyingni tasavvur qil. Men ham u yerda boʻlsam, yana yaxshi. 🌿",
+    "Xato qilsang ham, sen men uchun eng yaxshi insonsan.",
+    "Seni tanimaydiganlar ham tabassumingni koʻrsa, kayfiyati koʻtariladi. Men esa seni taniganim uchun baxtliman.",
+    "Maktabda ba’zan darsdan koʻra seni koʻproq kuzatardim. Hozir esa seni sogʻinib oʻtiribman.",
+    "Biz ikkimiz birgamiz. Uzoqda boʻlsak ham, kerak boʻlsa, bir xabar yozsang kifoya.",
+    "Hozir hech narsa qilmasang ham, sen men uchun qadrlisan.",
+    "Koʻproq jilmay, Madi. Seni juda yaxshi koʻraman. 💛"
+  ];
+
+  const FACES = ["😊","😄","🥰","😎","🤗","😁","🌞","🤩","😌","🥳"];
+  const COLORS = ["#bfe3ff","#ffe1e6","#fff1b8","#d6f5d6","#e6dcff","#ffe0c2"];
+  const FLOATS = ["💛","🌸","✨","🌈","☀️","🍀","🎈"];
+
+  document.getElementById("title").textContent = NAME + ", sen uchun kichik sovgʻa";
+  document.title = NAME + " uchun";
+  const d = Math.floor((Date.now() - new Date(SINCE).getTime()) / 86400000);
+  if(d > 0) document.getElementById("days").textContent = "Birga boʻlganimizga " + d + " kun boʻldi 💛";
+
+  const msg = document.getElementById("msg");
+  const face = document.getElementById("face");
+    let idx = 0, shown = 0;
+
+  function shuffle(a){
+    a = a.slice();
+    for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+    return a;
+  }
+
+  function burst(){
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    for(let i=0;i<8;i++){
+      const s = document.createElement("span");
+      s.className = "float";
+      s.textContent = FLOATS[Math.floor(Math.random()*FLOATS.length)];
+      s.style.left = Math.random()*95 + "vw";
+      s.style.animationDelay = (Math.random()*0.5) + "s";
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(), 3500);
+    }
+  }
+
+  document.getElementById("go").addEventListener("click", ()=>{
+    msg.textContent = MESSAGES[idx];
+    idx = (idx + 1) % MESSAGES.length;
+    shown++;
+    msg.classList.remove("pop"); void msg.offsetWidth; msg.classList.add("pop");
+    face.textContent = FACES[Math.floor(Math.random()*FACES.length)];
+    face.style.transform = "rotate(" + (Math.random()*20-10) + "deg) scale(1.1)";
+    document.body.style.background = COLORS[shown % COLORS.length];
+    burst();
+  });
+  const PASS = "1705";
+  const pw = document.getElementById("pw"), err = document.getElementById("err");
+  let tries = 0;
+  let busy = false;
+  function shakeIt(){ pw.classList.remove("shake"); void pw.offsetWidth; pw.classList.add("shake"); }
+  function tryOpen(){
+    if(busy) return;
+    tries++;
+    const ok = pw.value.trim() === PASS;
+    if(tries >= 2 && ok){
+      busy = true;
+      pw.disabled = true;
+      err.textContent = "Rostan ham unutdingmi 🙄";
+      shakeIt();
+      setTimeout(() => {
+        err.textContent = "Hazillashdim 🤭";
+        setTimeout(() => {
+          document.body.classList.add("open");
+          document.body.style.background = COLORS[1];
+          burst();
+        }, 1500);
+      }, 5000);
+    } else {
+      err.textContent = "Hmm, bu emas. Yana bir urinib koʻr, sen topasan! 😊";
+      shakeIt();
+      pw.select();
+    }
+  }
+  document.getElementById("open").addEventListener("click", tryOpen);
+  pw.addEventListener("keydown", e => { if(e.key === "Enter") tryOpen(); });
+  pw.focus();
+</script>
+</body>
+</html>
